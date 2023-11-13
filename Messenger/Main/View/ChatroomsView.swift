@@ -24,6 +24,10 @@ class ChatroomsView: UIViewController {
         
     }
     
+    override func viewWillAppear(_ animated: Bool) {
+        viewModel.reloadActualChats()
+    }
+    
     private func setupView() {
         view.backgroundColor = .systemBackground
         view.addSubview(chatsTableView)
@@ -67,7 +71,8 @@ extension ChatroomsView: UITableViewDataSource, UITableViewDelegate {
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         guard let cell = tableView.dequeueReusableCell(withIdentifier: ChatCell.identifeier, for: indexPath) as? ChatCell else { return UITableViewCell() }
-        cell.configure(userName: viewModel.model.chatsInfoArray.value[indexPath.row].otherUserNickname)
+        let chatsInfoArray = viewModel.model.chatsInfoArray.value
+        cell.configure(userName: chatsInfoArray[indexPath.row].otherUserNickname, lastMessage: chatsInfoArray[indexPath.row].lastMessage)
         return cell
     }
     

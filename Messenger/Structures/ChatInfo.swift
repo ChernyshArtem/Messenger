@@ -9,6 +9,7 @@ struct ChatInfo {
     
     public let otherUserNickname: String
     public let otherUserId: String
+    public let lastMessage: String
     public let chatId: String
     
 }

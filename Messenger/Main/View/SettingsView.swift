@@ -70,10 +70,12 @@ class SettingsView: UIViewController {
             make.centerX.equalTo(view.safeAreaLayoutGuide)
             make.bottom.equalTo(view.safeAreaLayoutGuide).inset(16)
         }
-
+        
         exitButton.addTarget(self, action: #selector(exitFromAccount), for: .touchUpInside)
         navigationItem.rightBarButtonItem = UIBarButtonItem(title: "Change", style: .plain, target: self, action: #selector(changeNickname))
-        navigationItem.leftBarButtonItem = UIBarButtonItem(title: "Delete", style: .plain, target: self, action: #selector(deleteAccount))
+        let deleteButton = UIBarButtonItem(title: "Delete", style: .plain, target: self, action: #selector(deleteAccount))
+        deleteButton.tintColor = .red
+        navigationItem.leftBarButtonItem = deleteButton
     }
     
     private func setupBindings() {
@@ -81,16 +83,6 @@ class SettingsView: UIViewController {
             guard errorDescription != "" else { return }
             self?.present(CustomAlert.makeCustomAlert(title: "Error", message: errorDescription), animated: true, completion: nil)
         }.disposed(by: bag)
-    }
-    
-    @objc func changeNickname() {
-        let alert = CustomAlert.makeCustomAlertWithResult(title: "Attention", message: "Do you really want to change your nickname?") { [weak self] wantToChangeNickname in
-             if wantToChangeNickname == true {
-                 guard let alertWithNickname = self?.makeAlertWithNickname() else { return }
-                 self?.present(alertWithNickname, animated: true)
-            }
-        }
-        self.present(alert, animated: true, completion: nil)
     }
     
     private func makeAlertWithNickname() -> UIAlertController {
@@ -111,7 +103,19 @@ class SettingsView: UIViewController {
         return alertWithNickname
     }
     
-    @objc func deleteAccount() {
+    @objc
+    func changeNickname() {
+        let alert = CustomAlert.makeCustomAlertWithResult(title: "Attention", message: "Do you really want to change your nickname?") { [weak self] wantToChangeNickname in
+             if wantToChangeNickname == true {
+                 guard let alertWithNickname = self?.makeAlertWithNickname() else { return }
+                 self?.present(alertWithNickname, animated: true)
+            }
+        }
+        self.present(alert, animated: true, completion: nil)
+    }
+    
+    @objc
+    func deleteAccount() {
         let alert = CustomAlert.makeCustomAlertWithResult(title: "Warning", message: "Are you sure you want to delete your account?") { [weak self] deleteAccount in
             if deleteAccount == true {
                 self?.viewModel.deleteAccount()
@@ -120,7 +124,8 @@ class SettingsView: UIViewController {
         self.present(alert, animated: true, completion: nil)
     }
     
-    @objc func exitFromAccount() {
+    @objc
+    func exitFromAccount() {
         UserDefaults.standard.set(nil, forKey: "userNickname")
         UserDefaults.standard.set(nil, forKey: "userId")
         self.view.window?.rootViewController = UINavigationController(rootViewController: StartView())

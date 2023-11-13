@@ -13,6 +13,12 @@ import RxCocoa
 
 class ChatView: MessagesViewController {
     
+    private let formatter: DateFormatter = {
+      let formatter = DateFormatter()
+      formatter.dateStyle = .medium
+      return formatter
+    }()
+    
     let bag = DisposeBag()
     let viewModel: ChatViewModelInterface = ChatViewModel()
     
@@ -29,6 +35,19 @@ class ChatView: MessagesViewController {
     
     override func viewWillDisappear(_ animated: Bool) {
         tabBarController?.tabBar.isHidden = false
+        setRefreshedTabBar()
+    }
+    
+    private func setRefreshedTabBar() {
+        guard let window = self.view.window else { return }
+        
+        window.rootViewController = MessengerTabBar()
+        window.makeKeyAndVisible()
+        UIView.transition(with: window,
+                          duration: 0.3,
+                          options: .transitionCrossDissolve,
+                          animations: nil,
+                          completion: nil)
     }
     
     private func setupView() {
@@ -37,7 +56,14 @@ class ChatView: MessagesViewController {
         messagesCollectionView.messagesDisplayDelegate = self
         messagesCollectionView.messageCellDelegate = self
         messageInputBar.delegate = self
+        navigationItem.title = viewModel.model.otherNickname
+        let deleteButton = UIBarButtonItem(title: "Delete", style: .plain, target: self, action: #selector(deleteChat))
+        deleteButton.tintColor = .red
+        navigationItem.rightBarButtonItem = deleteButton
         Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+            self?.viewModel.checkIsChatAreNotDeleted(notExist: {
+                self?.navigationController?.popViewController(animated: true)
+            })
             self?.viewModel.isMessagesAreNeedToLoad()
         }
         setupBindings()
@@ -56,9 +82,21 @@ class ChatView: MessagesViewController {
             }
         }.disposed(by: bag)
     }
+    
+    @objc
+    private func deleteChat() {
+        let alert = CustomAlert.makeCustomAlertWithResult(title: "Warning", message: "Are you sure that you want to delete this chat?") { [weak self] deleteChat in
+            if deleteChat == true {
+                self?.viewModel.deleteChat { [weak self] in
+                    self?.navigationController?.popViewController(animated: true)
+                }
+            }
+        }
+        self.present(alert, animated: true, completion: nil)
+    }
 }
 
-extension ChatView: MessagesDisplayDelegate, MessagesLayoutDelegate, MessagesDataSource  {
+extension ChatView: MessagesLayoutDelegate, MessagesDataSource  {
     var currentSender: MessageKit.SenderType {
         return viewModel.model.ownSender
     }
@@ -115,4 +153,46 @@ extension ChatView: MessageCellDelegate {
         alertWithNickname.addAction(submitAction)
         return alertWithNickname
     }
+}
+
+extension ChatView: MessagesDisplayDelegate {
+    func cellTopLabelAttributedText(for message: MessageType, at indexPath: IndexPath) -> NSAttributedString? {
+      if indexPath.section % 3 == 0 {
+        return NSAttributedString(
+            string: MessageKitDateFormatter.shared.string(from: message.sentDate),
+          attributes: [
+            NSAttributedString.Key.font: UIFont.boldSystemFont(ofSize: 10),
+            NSAttributedString.Key.foregroundColor: UIColor.darkGray,
+          ])
+      }
+      return nil
+    }
+    
+    func cellBottomLabelAttributedText(for _: MessageType, at indexPath: IndexPath) -> NSAttributedString? {
+        let messages = viewModel.model.messages.value
+        let ownSender = viewModel.model.ownSender
+        let otherSender = viewModel.model.otherSender
+        var name = ""
+        if messages[indexPath.section].sender.senderId == ownSender.senderId {
+            name = "Me"
+        } else {
+            name = otherSender.displayName
+        }
+        
+        return  NSAttributedString(
+            string: name,
+            attributes: [
+                NSAttributedString.Key.font: UIFont.boldSystemFont(ofSize: 10),
+                NSAttributedString.Key.foregroundColor: UIColor.darkGray,
+            ])
+    }
+    
+    func cellTopLabelHeight(for message: MessageType, at indexPath: IndexPath, in messagesCollectionView: MessagesCollectionView) -> CGFloat {
+        20
+    }
+    
+    func cellBottomLabelHeight(for message: MessageType, at indexPath: IndexPath, in messagesCollectionView: MessagesCollectionView) -> CGFloat {
+        20
+    }
+    
 }

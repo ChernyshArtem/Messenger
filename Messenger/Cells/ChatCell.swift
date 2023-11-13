@@ -58,7 +58,8 @@ class ChatCell: UITableViewCell {
         fatalError("init(coder:) has not been implemented")
     }
     
-    func configure(userName: String) {
+    func configure(userName: String, lastMessage: String) {
         self.userName.text = userName
+        self.lastMessage.text = lastMessage
     }
 }

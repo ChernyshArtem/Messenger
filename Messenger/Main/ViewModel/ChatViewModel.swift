@@ -11,10 +11,12 @@ import InputBarAccessoryView
 
 protocol ChatViewModelInterface {
     var model: ChatModel { get }
+    func checkIsChatAreNotDeleted(notExist: @escaping () -> ())
     func isMessagesAreNeedToLoad()
     func inputBar(_ inputBar: InputBarAccessoryView, didPressSendButtonWith text: String)
     func editMessage(messageText: String, data: MessageType, newMessageText: String) 
     func deleteMessage(messageText: String, data: MessageType)
+    func deleteChat(completion: @escaping () -> ())
 }
 
 class ChatViewModel: ChatViewModelInterface {
@@ -23,8 +25,22 @@ class ChatViewModel: ChatViewModelInterface {
     
     init() { model = ChatModel() }
     
+    func checkIsChatAreNotDeleted(notExist: @escaping () -> ()) {
+        let database = model.database
+        database.collection("chat").document(model.chatId).getDocument { document, error in
+            guard let document,
+                  document.exists
+            else {
+                notExist()
+                return
+            }
+        }
+    }
+    
     func isMessagesAreNeedToLoad() {
-        model.database.collection("chat").document(model.chatId).collection("messages").getDocuments(completion: { [weak self] (querySnapshot, error) in
+        let database = model.database
+        
+        database.collection("chat").document(model.chatId).collection("messages").getDocuments(completion: { [weak self] (querySnapshot, error) in
             guard error == nil else {
                 self?.model.error.accept(error?.localizedDescription ?? "")
                 return
@@ -47,42 +63,6 @@ class ChatViewModel: ChatViewModelInterface {
                 }
             }
         })
-    }
-    
-    func loadMessages() {
-        model.database.collection("chat").document(model.chatId).collection("messages").getDocuments() { [weak self] (querySnapshot, error) in
-            guard error == nil else {
-                self?.model.error.accept(error?.localizedDescription ?? "")
-                return
-            }
-            self?.model.messages.accept([])
-            for document in querySnapshot!.documents {
-                let doc = document.data()
-                guard let ownSender = self?.model.ownSender,
-                      let otherSender = self?.model.otherSender,
-                      let text = doc["text"] as? String,
-                      let timestamp = doc["date"] as? Timestamp,
-                      var messages = self?.model.messages.value else { return }
-                let date = Date(timeIntervalSince1970: TimeInterval(timestamp.seconds))
-                
-                if doc["sender"] as? String == ownSender.senderId {
-                    messages.append(Message(sender: ownSender, messageId: "\(messages.count + 1)", sentDate: date, kind: .text(text)))
-                    self?.model.messages.accept(messages)
-                } else {
-                    messages.append(Message(sender: otherSender, messageId: "\(messages.count + 1)", sentDate: date, kind: .text(text)))
-                    self?.model.messages.accept(messages)
-                }
-            }
-            self?.loadFirstMessages()
-        }
-    }
-    
-    func loadFirstMessages() {
-        var messages = model.messages.value
-        messages.sort { messageOne, messageTwo in
-            messageOne.sentDate < messageTwo.sentDate
-        }
-        model.messages.accept(messages)
     }
     
     func inputBar(_ inputBar: InputBarAccessoryView, didPressSendButtonWith text: String) {
@@ -121,9 +101,60 @@ class ChatViewModel: ChatViewModelInterface {
         }
     }
     
+    func deleteChat(completion: @escaping () -> ()) {
+        let database = model.database
+        let chatId = model.chatId
+        let firstUserId = model.userId
+        let secondUserId = model.otherId
+        
+        database.collection("user").document(firstUserId).collection("chats").document(chatId).delete()
+        database.collection("user").document(secondUserId).collection("chats").document(chatId).delete()
+        database.collection("chat").document(chatId).delete { error in
+            completion()
+        }
+    }
+    
+    private func loadMessages() {
+        let database = model.database
+        database.collection("chat").document(model.chatId).collection("messages").getDocuments() { [weak self] (querySnapshot, error) in
+            guard error == nil else {
+                self?.model.error.accept(error?.localizedDescription ?? "")
+                return
+            }
+            self?.model.messages.accept([])
+            for document in querySnapshot!.documents {
+                let doc = document.data()
+                guard let ownSender = self?.model.ownSender,
+                      let otherSender = self?.model.otherSender,
+                      let text = doc["text"] as? String,
+                      let timestamp = doc["date"] as? Timestamp,
+                      var messages = self?.model.messages.value else { return }
+                let date = Date(timeIntervalSince1970: TimeInterval(timestamp.seconds))
+                
+                if doc["sender"] as? String == ownSender.senderId {
+                    messages.append(Message(sender: ownSender, messageId: "\(messages.count + 1)", sentDate: date, kind: .text(text)))
+                    self?.model.messages.accept(messages)
+                } else {
+                    messages.append(Message(sender: otherSender, messageId: "\(messages.count + 1)", sentDate: date, kind: .text(text)))
+                    self?.model.messages.accept(messages)
+                }
+            }
+            self?.loadFirstMessages()
+        }
+    }
+    
+    private func loadFirstMessages() {
+        var messages = model.messages.value
+        messages.sort { messageOne, messageTwo in
+            messageOne.sentDate < messageTwo.sentDate
+        }
+        model.messages.accept(messages)
+    }
+    
     private func findMessageId(messageText: String, data: MessageType, completion: @escaping (String) -> ()) {
         var doucmentIdForResult = ""
-        model.database.collection("chat").document(model.chatId).collection("messages").getDocuments { [weak self] (querySnapshot, error) in
+        let database = model.database
+        database.collection("chat").document(model.chatId).collection("messages").getDocuments { [weak self] (querySnapshot, error) in
             guard error == nil else {
                 self?.model.error.accept(error?.localizedDescription ?? "")
                 return

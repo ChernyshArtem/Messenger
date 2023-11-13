@@ -40,7 +40,8 @@ class RegistrationViewModel: RegistrationViewModelInterface {
     
     private func checkFreeStatusOfNickname(_ nickname: String, completion: @escaping (Bool) -> ()) {
         var nicknameStatus = true
-        model.database.collection("user").getDocuments(completion: { [weak self] (querySnapshot, error) in
+        let database = model.database
+        database.collection("user").getDocuments(completion: { [weak self] (querySnapshot, error) in
             guard error == nil else {
                 self?.model.error.accept(error?.localizedDescription ?? "")
                 return

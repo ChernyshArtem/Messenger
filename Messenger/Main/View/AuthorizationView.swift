@@ -134,7 +134,8 @@ class AuthorizationView: UIViewController {
         loginButton.addTarget(self, action: #selector(loginUser), for: .touchUpInside)
     }
     
-    @objc func changeStatusOfSecureEye() {
+    @objc
+    func changeStatusOfSecureEye() {
         if secureEyeButton.currentBackgroundImage == UIImage(systemName: "eye.slash") {
             secureEyeButton.setBackgroundImage(UIImage(systemName: "eye"), for: .normal)
             passwordTextField.isSecureTextEntry = true
@@ -144,15 +145,18 @@ class AuthorizationView: UIViewController {
         }
     }
     
-    @objc private func goToRegistrationViewController() {
+    @objc
+    private func goToRegistrationViewController() {
         navigationController?.pushViewController(RegistrationView(), animated: true)
     }
     
-    @objc private func loginUser() {
+    @objc
+    private func loginUser() {
         viewModel.loginUser()
     }
     
-    @objc func hideKeyboard() {
+    @objc
+    func hideKeyboard() {
         view.endEditing(true)
     }
     

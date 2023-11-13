@@ -20,7 +20,8 @@ class SettingsViewModel: SettingsViewModelInterface {
     init() { model = SettingsModel() }
     
     func changeNickname(newNickname: String, userId: String, userNameLabel: UILabel) {
-        model.database.collection("user").document(userId).updateData(["nickname": newNickname ])
+        let database = model.database
+        database.collection("user").document(userId).updateData(["nickname": newNickname ])
         UserDefaults.standard.string(forKey: "userNickname")
         UserDefaults.standard.set(newNickname, forKey: "userNickname")
         userNameLabel.text = newNickname
@@ -28,7 +29,8 @@ class SettingsViewModel: SettingsViewModelInterface {
     
     func checkFreeStatusOfNickname(_ nickname: String, completion: @escaping (Bool) -> ()) {
         var nicknameStatus = true
-        model.database.collection("user").getDocuments(completion: { [weak self] (querySnapshot, error) in
+        let database = model.database
+        database.collection("user").getDocuments(completion: { [weak self] (querySnapshot, error) in
             guard error == nil else {
                 self?.model.error.accept(error?.localizedDescription ?? "")
                 return

@@ -67,7 +67,8 @@ class StartView: UIViewController {
         startButton.addTarget(self, action: #selector(goToAuthorizationViewController), for: .touchUpInside)
     }
     
-    @objc private func goToAuthorizationViewController() {
+    @objc
+    private func goToAuthorizationViewController() {
         navigationController?.pushViewController(AuthorizationView(), animated: true)
     }
     

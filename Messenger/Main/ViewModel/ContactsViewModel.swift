@@ -11,7 +11,7 @@ import UIKit
 protocol ContactsViewModelInterface {
     var model: ContactsModel { get }
     func fillActualContacts(_ textField: UITextField)
-    func addChat(numberOfUser: Int)
+    func addChat(numberOfUser: Int, completion: @escaping () -> ())
 }
 
 class ContactsViewModel: ContactsViewModelInterface {
@@ -21,7 +21,8 @@ class ContactsViewModel: ContactsViewModelInterface {
     
     func fillActualContacts(_ textField: UITextField) {
         let searchText: String = textField.text?.lowercased() ?? ""
-        model.database.collection("user").getDocuments { [weak self] (querySnapshot, error) in
+        let database = model.database
+        database.collection("user").getDocuments { [weak self] (querySnapshot, error) in
             guard error == nil else {
                 self?.model.error.accept(error?.localizedDescription ?? "")
                 return
@@ -37,7 +38,7 @@ class ContactsViewModel: ContactsViewModelInterface {
         }
     }
     
-    func addChat(numberOfUser: Int) {
+    func addChat(numberOfUser: Int, completion: @escaping () -> ()) {
         checkCreationOfChat(numberOfContact: numberOfUser) { [weak self] result in
             guard result == false,
                   let userId = self?.model.userId,
@@ -59,21 +60,26 @@ class ContactsViewModel: ContactsViewModelInterface {
                       let firstUser = data["firstUser"] as? String,
                       let secondUser = data["secondUser"] as? String else { return }
                 
-                self?.model.database.collection("user").document(firstUser).collection("chats").addDocument(data: ["id":document.documentID,
-                    "otherUser": secondUser])
-                self?.model.database.collection("user").document(secondUser).collection("chats").addDocument(data: ["id":document.documentID,
-                    "otherUser": firstUser])
-                self?.model.database.collection("chat").document(document.documentID).setData(
-                    ["id":document.documentID,
-                     "firstUser":firstUser,
-                     "secondUser":secondUser])
+                self?.model.database.collection("user").document(firstUser).collection("chats").document(document.documentID).setData(["id":document.documentID,
+                              "otherUser": secondUser])
+                self?.model.database.collection("user").document(secondUser).collection("chats").document(document.documentID).setData(["id":document.documentID,
+                              "otherUser": firstUser])
+                self?.model.database.collection("chat").document(document.documentID)
+                    .setData(["id":document.documentID,
+                             "firstUser":firstUser,
+                             "secondUser":secondUser],
+                completion: { error in
+                    completion()
+                })
+                
             }
         }
     }
     
     func checkCreationOfChat(numberOfContact: Int, completion: @escaping (Bool) -> Void) {
         var chatExist: Bool = false
-        model.database.collection("chat").getDocuments { [weak self] (querySnapshot, error) in
+        let database = model.database
+        database.collection("chat").getDocuments { [weak self] (querySnapshot, error) in
             guard error == nil else {
                 self?.model.error.accept(error?.localizedDescription ?? "")
                 return

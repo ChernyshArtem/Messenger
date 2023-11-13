@@ -179,23 +179,27 @@ class RegistrationView: UIViewController {
         }
     }
     
-    @objc private func registerNewUser() {
+    @objc
+    private func registerNewUser() {
         viewModel.registerNewUser()
     }
     
-    @objc func keyboardWillShow(_ notification: Foundation.Notification) {
+    @objc
+    func keyboardWillShow(_ notification: Foundation.Notification) {
         guard let userInfo = notification.userInfo else { return }
         let keyboardHeight = (userInfo[UIResponder.keyboardFrameEndUserInfoKey] as AnyObject).cgRectValue.size.height
         setupSubviewsForKeyboard(keyboardHeight: keyboardHeight)
         view.layoutIfNeeded()
     }
         
-    @objc func keyboardWillHide(_ notification: Foundation.Notification) {
+    @objc
+    func keyboardWillHide(_ notification: Foundation.Notification) {
         setupSubviews()
         view.layoutIfNeeded()
     }
     
-    @objc func hideKeyboard() {
+    @objc
+    func hideKeyboard() {
         view.endEditing(true)
     }
     
