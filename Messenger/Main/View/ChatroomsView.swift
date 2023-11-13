@@ -19,7 +19,7 @@ class ChatroomsView: UIViewController {
     let viewModel: ChatroomsViewModelInterface = ChatroomsViewModel()
     
     override func viewDidLoad() {
-        
+  
         setupView()
         
     }

@@ -109,6 +109,17 @@ class ChatViewModel: ChatViewModelInterface {
         
         database.collection("user").document(firstUserId).collection("chats").document(chatId).delete()
         database.collection("user").document(secondUserId).collection("chats").document(chatId).delete()
+        database.collection("chat").document(chatId).collection("messages").getDocuments { [weak self] (querySnapshot, error) in
+            guard error == nil else {
+                self?.model.error.accept(error?.localizedDescription ?? "")
+                return
+            }
+            for document in querySnapshot!.documents {
+                let documentId = document.documentID
+                database.collection("chat").document(chatId).collection("messages").document(documentId).delete()
+            }
+        }
+        database.collection("chat").document(chatId).delete()
         database.collection("chat").document(chatId).delete { error in
             completion()
         }

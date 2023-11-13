@@ -6,12 +6,13 @@
 //
 
 import UIKit
+import FirebaseAuth
 
 protocol SettingsViewModelInterface {
     var model: SettingsModel { get }
     func changeNickname(newNickname: String, userId: String, userNameLabel: UILabel)
     func checkFreeStatusOfNickname(_ nickname: String, completion: @escaping (Bool) -> ())
-    func deleteAccount()
+    func deleteAccount(userId: String, completion: @escaping () -> ())
 }
 
 class SettingsViewModel: SettingsViewModelInterface {
@@ -45,7 +46,35 @@ class SettingsViewModel: SettingsViewModelInterface {
         })
     }
     
-    func deleteAccount() {
-         
+    func deleteAccount(userId: String, completion: @escaping () -> ()) {
+        let database = model.database
+        database.collection("user").document(userId).collection("chats").getDocuments { [weak self] (querySnapshot, error) in
+            guard error == nil else {
+                self?.model.error.accept(error?.localizedDescription ?? "")
+                return
+            }
+            for document in querySnapshot!.documents {
+                guard let otherUserId: String = document.data()["otherUser"] as? String,
+                      let chatId: String = document.data()["id"] as? String else { return }
+                database.collection("user").document(userId).collection("chats").document(chatId).delete()
+                database.collection("user").document(otherUserId).collection("chats").document(chatId).delete()
+                database.collection("chat").document(chatId).collection("messages").getDocuments { [weak self] (querySnapshot, error) in
+                    guard error == nil else {
+                        self?.model.error.accept(error?.localizedDescription ?? "")
+                        return
+                    }
+                    for document in querySnapshot!.documents {
+                        let documentId = document.documentID
+                        database.collection("chat").document(chatId).collection("messages").document(documentId).delete()
+                    }
+                }
+                database.collection("chat").document(chatId).delete()
+            }
+            database.collection("user").document(userId).delete()
+            UserDefaults.standard.set(nil, forKey: "userNickname")
+            UserDefaults.standard.set(nil, forKey: "userId")
+            Auth.auth().currentUser?.delete()
+            completion()
+        }
     }
 }

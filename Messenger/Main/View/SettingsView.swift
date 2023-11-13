@@ -118,7 +118,9 @@ class SettingsView: UIViewController {
     func deleteAccount() {
         let alert = CustomAlert.makeCustomAlertWithResult(title: "Warning", message: "Are you sure you want to delete your account?") { [weak self] deleteAccount in
             if deleteAccount == true {
-                self?.viewModel.deleteAccount()
+                self?.viewModel.deleteAccount(userId: self?.userId ?? "", completion: {
+                    self?.view.window?.rootViewController = UINavigationController(rootViewController: StartView())
+                })
             }
         }
         self.present(alert, animated: true, completion: nil)

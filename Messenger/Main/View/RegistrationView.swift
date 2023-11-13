@@ -30,7 +30,6 @@ class RegistrationView: UIViewController {
     let passwordTextField: UITextField = {
         let passwordTextField = UITextField()
         passwordTextField.placeholder = "Enter your password"
-        passwordTextField.isSecureTextEntry = true
         return passwordTextField
     }()
     let userImageView: UIImageView = {
