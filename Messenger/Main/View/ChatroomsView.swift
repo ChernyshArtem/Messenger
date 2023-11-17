@@ -25,7 +25,11 @@ class ChatroomsView: UIViewController {
     }
     
     override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
         viewModel.reloadActualChats()
+        Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+            self?.viewModel.reloadActualChats()
+        }
     }
     
     private func setupView() {
@@ -71,8 +75,8 @@ extension ChatroomsView: UITableViewDataSource, UITableViewDelegate {
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         guard let cell = tableView.dequeueReusableCell(withIdentifier: ChatCell.identifeier, for: indexPath) as? ChatCell else { return UITableViewCell() }
-        let chatsInfoArray = viewModel.model.chatsInfoArray.value
-        cell.configure(userName: chatsInfoArray[indexPath.row].otherUserNickname, lastMessage: chatsInfoArray[indexPath.row].lastMessage)
+        let chatInfo = viewModel.model.chatsInfoArray.value[indexPath.row]
+        cell.configure(userName: chatInfo.otherUserNickname, lastMessage: chatInfo.lastMessage)
         return cell
     }
     
@@ -92,5 +96,9 @@ extension ChatroomsView: UITableViewDataSource, UITableViewDelegate {
         model.otherId = chat.otherUserId
         model.otherNickname = chat.otherUserNickname
         navigationController?.pushViewController(vc, animated: true)
+    }
+    
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        100
     }
 }

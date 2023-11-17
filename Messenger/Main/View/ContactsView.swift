@@ -115,18 +115,6 @@ class ContactsView: UIViewController {
         NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillShow(_:)), name: UIResponder.keyboardWillChangeFrameNotification, object: nil)
     }
     
-    private func setRefreshedTabBar() {
-        guard let window = self.view.window else { return }
-        
-        window.rootViewController = MessengerTabBar()
-        window.makeKeyAndVisible()
-        UIView.transition(with: window,
-                          duration: 0.3,
-                          options: .transitionCrossDissolve,
-                          animations: nil,
-                          completion: nil)
-    }
-    
     @objc
     func keyboardWillShow(_ notification: Foundation.Notification) {
         guard let userInfo = notification.userInfo else { return }
@@ -154,7 +142,10 @@ extension ContactsView: UICollectionViewDelegate, UICollectionViewDataSource, UI
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: ContactsCell.identifeier, for: indexPath) as? ContactsCell else { return UICollectionViewCell() }
-        cell.configure(userImage: UIImage(systemName: "camera.circle.fill") ?? UIImage(), userNickname: viewModel.model.actualContacts.value[indexPath.row].nickname)
+        let actualContact = viewModel.model.actualContacts.value[indexPath.row]
+        viewModel.findContactImage(userId: actualContact.id) { image in
+            cell.configure(userImage: image, userNickname: actualContact.nickname)
+        }
         return cell
     }
     
@@ -163,9 +154,7 @@ extension ContactsView: UICollectionViewDelegate, UICollectionViewDataSource, UI
         let userNickname = cell.userNickname.text ?? ""
         let alert = CustomAlert.makeCustomAlertWithResult(title: "Attention", message: "Do you want to create chat with user \(userNickname)?") { [weak self] chatWillBeCreate in
             if chatWillBeCreate == true {
-                self?.viewModel.addChat(numberOfUser: indexPath.row) {
-                    self?.setRefreshedTabBar()
-                }
+                self?.viewModel.addChat(numberOfUser: indexPath.row)
             }
         }
         self.present(alert, animated: true, completion: nil)

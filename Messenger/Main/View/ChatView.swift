@@ -18,6 +18,8 @@ class ChatView: MessagesViewController {
       formatter.dateStyle = .medium
       return formatter
     }()
+    var userImage = UIImage()
+    var otherUserImage = UIImage()
     
     let bag = DisposeBag()
     let viewModel: ChatViewModelInterface = ChatViewModel()
@@ -35,19 +37,6 @@ class ChatView: MessagesViewController {
     
     override func viewWillDisappear(_ animated: Bool) {
         tabBarController?.tabBar.isHidden = false
-        setRefreshedTabBar()
-    }
-    
-    private func setRefreshedTabBar() {
-        guard let window = self.view.window else { return }
-        
-        window.rootViewController = MessengerTabBar()
-        window.makeKeyAndVisible()
-        UIView.transition(with: window,
-                          duration: 0.3,
-                          options: .transitionCrossDissolve,
-                          animations: nil,
-                          completion: nil)
     }
     
     private func setupView() {
@@ -60,13 +49,9 @@ class ChatView: MessagesViewController {
         let deleteButton = UIBarButtonItem(title: "Delete", style: .plain, target: self, action: #selector(deleteChat))
         deleteButton.tintColor = .red
         navigationItem.rightBarButtonItem = deleteButton
-        Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
-            self?.viewModel.checkIsChatAreNotDeleted(notExist: {
-                self?.navigationController?.popViewController(animated: true)
-            })
-            self?.viewModel.isMessagesAreNeedToLoad()
-        }
         setupBindings()
+        setupTimers()
+        setupImages()
     }
     
     private func setupBindings() {
@@ -78,9 +63,32 @@ class ChatView: MessagesViewController {
         viewModel.model.messages.bind { [weak self] model in
             DispatchQueue.main.async {
                 self?.messagesCollectionView.reloadData()
-                //MARK: скролл вниз фиг знает как сделать на 1 раз а не при каждом шаге messagesCollectionView.scrollToLastItem(animated: false)
             }
         }.disposed(by: bag)
+    }
+    
+    private func setupTimers() {
+        Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+            self?.viewModel.checkIsChatAreNotDeleted(notExist: {
+                self?.navigationController?.popViewController(animated: true)
+            })
+            self?.viewModel.isMessagesAreNeedToLoad {
+            }
+        }
+        Timer.scheduledTimer(withTimeInterval: 2, repeats: false) { [weak self] _ in
+            self?.messagesCollectionView.scrollToLastItem(animated: true)
+        }
+    }
+    
+    private func setupImages() {
+        let userId = viewModel.model.ownSender.senderId
+        let otherUserId = viewModel.model.otherSender.senderId
+        viewModel.downloadImageFromDatabase(userId: userId) { [weak self] image in
+            self?.userImage = image
+        }
+        viewModel.downloadImageFromDatabase(userId: otherUserId) {[weak self] image in
+            self?.otherUserImage = image
+        }
     }
     
     @objc
@@ -156,6 +164,7 @@ extension ChatView: MessageCellDelegate {
 }
 
 extension ChatView: MessagesDisplayDelegate {
+    
     func cellTopLabelAttributedText(for message: MessageType, at indexPath: IndexPath) -> NSAttributedString? {
       if indexPath.section % 3 == 0 {
         return NSAttributedString(
@@ -185,6 +194,17 @@ extension ChatView: MessagesDisplayDelegate {
                 NSAttributedString.Key.font: UIFont.boldSystemFont(ofSize: 10),
                 NSAttributedString.Key.foregroundColor: UIColor.darkGray,
             ])
+    }
+    
+    func configureAvatarView(_ avatarView: AvatarView, for message: MessageType, at indexPath: IndexPath, in messagesCollectionView: MessagesCollectionView) {
+        let userId = viewModel.model.userId
+        var avatar = Avatar()
+        if message.sender.senderId == userId {
+            avatar = Avatar(image: userImage)
+        } else {
+            avatar = Avatar(image: otherUserImage)
+        }
+        avatarView.set(avatar: avatar)
     }
     
     func cellTopLabelHeight(for message: MessageType, at indexPath: IndexPath, in messagesCollectionView: MessagesCollectionView) -> CGFloat {

@@ -32,9 +32,15 @@ class RegistrationView: UIViewController {
         passwordTextField.placeholder = "Enter your password"
         return passwordTextField
     }()
-    let userImageView: UIImageView = {
+    let userImageButton: UIButton = {
+        let userImageButton = UIButton(type: .system)
+        return userImageButton
+    }()
+    let userImage: UIImageView = {
         let userImage = UIImageView()
         userImage.image = UIImage(systemName: "camera.circle.fill")
+        userImage.layer.cornerRadius = 50
+        userImage.clipsToBounds = true
         userImage.tintColor = .gray
         return userImage
     }()
@@ -51,7 +57,7 @@ class RegistrationView: UIViewController {
     let viewModel: RegistrationViewModelInterface = RegistrationViewModel()
     
     override func viewDidLoad() {
-        
+         
         setupView()
         
     }
@@ -68,7 +74,8 @@ class RegistrationView: UIViewController {
         view.addSubview(nicknameTextField)
         view.addSubview(emailTextField)
         view.addSubview(passwordTextField)
-        view.addSubview(userImageView)
+        view.addSubview(userImage)
+        view.addSubview(userImageButton)
         view.addSubview(registerButton)
         
         setupSubviews()
@@ -84,13 +91,16 @@ class RegistrationView: UIViewController {
             make.top.equalTo(view.safeAreaLayoutGuide).offset(40)
             make.centerX.equalTo(view.safeAreaLayoutGuide)
         }
-        userImageView.snp.remakeConstraints { make in
+        userImage.snp.remakeConstraints { make in
             make.top.equalTo(infoLabel.snp.bottom).offset(40)
             make.centerX.equalTo(view.safeAreaLayoutGuide)
             make.width.height.equalTo(100)
         }
+        userImageButton.snp.remakeConstraints { make in
+            make.edges.equalTo(userImage)
+        }
         nicknameTextField.snp.remakeConstraints { make in
-            make.top.equalTo(userImageView.snp.bottom).offset(40)
+            make.top.equalTo(userImage.snp.bottom).offset(40)
             make.centerX.equalTo(view.safeAreaLayoutGuide)
             make.width.equalTo(screenWidth)
         }
@@ -113,6 +123,7 @@ class RegistrationView: UIViewController {
     
     private func setupTargets() {
         registerButton.addTarget(self, action: #selector(registerNewUser), for: .touchUpInside)
+        userImageButton.addTarget(self, action: #selector(uploadPhoto), for: .touchUpInside)
     }
     
     private func setupBindings() {
@@ -122,6 +133,7 @@ class RegistrationView: UIViewController {
                 self?.present(CustomAlert.makeCustomAlert(title: "Warning", message: "Your account hasn't been registered. This nickname is occupied"), animated: true, completion: nil)
             case .success:
                 self?.present(CustomAlert.makeCustomAlert(title: "Congratuations", message: "Your account has been registered"), animated: true, completion: nil)
+                
             case .other: break
             }
         }.disposed(by: bag)
@@ -167,13 +179,16 @@ class RegistrationView: UIViewController {
             make.centerX.equalTo(view.safeAreaLayoutGuide)
             make.width.equalTo(screenWidth)
         }
-        userImageView.snp.remakeConstraints { make in
+        userImage.snp.remakeConstraints { make in
             make.bottom.equalTo(nicknameTextField.snp.top).inset(-20)
             make.centerX.equalTo(view.safeAreaLayoutGuide)
             make.width.height.equalTo(100)
         }
+        userImageButton.snp.remakeConstraints { make in
+            make.edges.equalTo(userImage)
+        }
         infoLabel.snp.remakeConstraints { make in
-            make.bottom.equalTo(userImageView.snp.top).inset(-20)
+            make.bottom.equalTo(userImage.snp.top).inset(-20)
             make.centerX.equalTo(view.safeAreaLayoutGuide)
         }
     }
@@ -181,6 +196,15 @@ class RegistrationView: UIViewController {
     @objc
     private func registerNewUser() {
         viewModel.registerNewUser()
+    }
+    
+    @objc
+    private func uploadPhoto() {
+        let picker = UIImagePickerController()
+        picker.sourceType = .photoLibrary
+        picker.delegate = self
+        picker.allowsEditing = true
+        present(picker, animated: true)
     }
     
     @objc
@@ -200,6 +224,22 @@ class RegistrationView: UIViewController {
     @objc
     func hideKeyboard() {
         view.endEditing(true)
+    }
+    
+}
+
+extension RegistrationView: UIImagePickerControllerDelegate & UINavigationControllerDelegate {
+    
+    func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
+        picker.dismiss(animated: true)
+        guard let image = info[UIImagePickerController.InfoKey.editedImage] as? UIImage else { return }
+        guard let imageData = image.pngData() else { return }
+        userImage.image = image
+        viewModel.model.actualImageData.accept(imageData)
+    }
+
+    func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+        picker.dismiss(animated: true)
     }
     
 }

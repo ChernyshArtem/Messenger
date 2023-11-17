@@ -23,8 +23,14 @@ class SettingsView: UIViewController {
     let userImageView: UIImageView = {
         let userImage = UIImageView()
         userImage.image = UIImage(systemName: "camera.circle.fill")
+        userImage.layer.cornerRadius = 50
+        userImage.clipsToBounds = true
         userImage.tintColor = .gray
         return userImage
+    }()
+    let userImageButton: UIButton = {
+        let userImageButton = UIButton(type: .system)
+        return userImageButton
     }()
     let exitButton: UIButton = {
         let exitButton = UIButton(type: .system)
@@ -45,10 +51,12 @@ class SettingsView: UIViewController {
     private func setupView() {
         view.backgroundColor = .systemBackground
         view.addSubview(userImageView)
+        view.addSubview(userImageButton)
         view.addSubview(userName)
         view.addSubview(exitButton)
         setupSubviews()
         setupBindings()
+        viewModel.downloadUserImage(userId: userId ?? "")
     }
     
     private func setupSubviews() {
@@ -56,10 +64,14 @@ class SettingsView: UIViewController {
             userId = UserDefaults.standard.string(forKey: "userId")
             userName.text = UserDefaults.standard.string(forKey: "userNickname")
         }
+        
         userImageView.snp.makeConstraints { make in
             make.top.equalTo(view.safeAreaLayoutGuide).offset(16)
             make.centerX.equalTo(view.safeAreaLayoutGuide)
             make.width.height.equalTo(100)
+        }
+        userImageButton.snp.makeConstraints { make in
+            make.edges.equalTo(userImageView)
         }
         userName.snp.makeConstraints { make in
             make.top.equalTo(userImageView.snp.bottom).offset(16)
@@ -70,8 +82,8 @@ class SettingsView: UIViewController {
             make.centerX.equalTo(view.safeAreaLayoutGuide)
             make.bottom.equalTo(view.safeAreaLayoutGuide).inset(16)
         }
-        
         exitButton.addTarget(self, action: #selector(exitFromAccount), for: .touchUpInside)
+        userImageButton.addTarget(self, action: #selector(uploadPhoto), for: .touchUpInside)
         navigationItem.rightBarButtonItem = UIBarButtonItem(title: "Change", style: .plain, target: self, action: #selector(changeNickname))
         let deleteButton = UIBarButtonItem(title: "Delete", style: .plain, target: self, action: #selector(deleteAccount))
         deleteButton.tintColor = .red
@@ -82,6 +94,13 @@ class SettingsView: UIViewController {
         viewModel.model.error.bind { [weak self] errorDescription in
             guard errorDescription != "" else { return }
             self?.present(CustomAlert.makeCustomAlert(title: "Error", message: errorDescription), animated: true, completion: nil)
+        }.disposed(by: bag)
+        viewModel.model.imageData.bind { [weak self] imageData in
+            if imageData != Data() {
+                DispatchQueue.main.async {
+                    self?.userImageView.image = UIImage(data: imageData)
+                }
+            }
         }.disposed(by: bag)
     }
     
@@ -101,6 +120,15 @@ class SettingsView: UIViewController {
         }
         alertWithNickname.addAction(submitAction)
         return alertWithNickname
+    }
+    
+    @objc
+    private func uploadPhoto() {
+        let picker = UIImagePickerController()
+        picker.sourceType = .photoLibrary
+        picker.delegate = self
+        picker.allowsEditing = true
+        present(picker, animated: true)
     }
     
     @objc
@@ -132,5 +160,20 @@ class SettingsView: UIViewController {
         UserDefaults.standard.set(nil, forKey: "userId")
         self.view.window?.rootViewController = UINavigationController(rootViewController: StartView())
     }
+    
+}
 
+extension SettingsView: UIImagePickerControllerDelegate & UINavigationControllerDelegate {
+    func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
+        picker.dismiss(animated: true)
+        guard let image = info[UIImagePickerController.InfoKey.editedImage] as? UIImage else { return }
+        guard let imageData = image.pngData(),
+              let userId = userId,
+              let userNickname = userName.text else { return }
+        viewModel.uploadNewUserImage(userId: userId, userNickname: userNickname, imageData: imageData)
+    }
+
+    func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+        picker.dismiss(animated: true)
+    }
 }
