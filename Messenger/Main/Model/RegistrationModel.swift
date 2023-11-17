@@ -15,4 +15,5 @@ class RegistrationModel {
     let userPassword = BehaviorRelay(value: "")
     let userNickname = BehaviorRelay(value: "")
     let error = BehaviorRelay(value: "")
+    var actualImageData: BehaviorRelay<Data> = BehaviorRelay(value: Data()) 
 }

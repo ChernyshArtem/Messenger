@@ -11,4 +11,5 @@ import RxRelay
 class SettingsModel {
     let database = Firestore.firestore()
     let error = BehaviorRelay(value: "")
+    var imageData = BehaviorRelay(value: Data())
 }
