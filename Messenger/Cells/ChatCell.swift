@@ -20,7 +20,7 @@ class ChatCell: UITableViewCell {
     
     private let userImage: UIImageView = {
         let iv = UIImageView()
-        iv.image = UIImage(systemName:"camera.circle.fill")
+        iv.image = UIImage(systemName:"person.circle.fill")
         iv.tintColor = .gray
         return iv
     }()
@@ -28,7 +28,6 @@ class ChatCell: UITableViewCell {
     private let lastMessage: UILabel = {
         let label = UILabel()
         label.text = "last message"
-        label.numberOfLines = 2
         return label
     }()
     
@@ -48,10 +47,10 @@ class ChatCell: UITableViewCell {
         }
         lastMessage.snp.makeConstraints { make in
             make.left.equalTo(userImage.snp.right).offset(20)
+            make.right.equalTo(contentView).inset(8)
             make.top.equalTo(userName.snp.bottom).offset(8)
             make.bottom.equalTo(contentView).inset(20)
         }
-        
     }
     
     required init?(coder: NSCoder) {

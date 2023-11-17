@@ -22,6 +22,7 @@ class ContactsCell: UICollectionViewCell {
         let userNickname = UILabel()
         userNickname.text = "error"
         userNickname.numberOfLines = 0
+        userNickname.textColor = .systemGray5 
         return userNickname
     }()
     
@@ -33,19 +34,22 @@ class ContactsCell: UICollectionViewCell {
             make.left.top.equalTo(contentView).offset(8)
             make.height.width.equalTo(contentView.frame.height - 16)
         }
+        userImage.layer.cornerRadius = (contentView.frame.height - 16) / 2
+        userImage.clipsToBounds = true
+        
         userNickname.snp.makeConstraints { make in
             make.centerY.equalTo(contentView)
             make.left.equalTo(userImage.snp.right).offset(8)
             make.right.equalTo(contentView).inset(8)
             make.width.equalTo(contentView.frame.width - contentView.frame.height - 32)
         }
-        contentView.backgroundColor = .gray
+        contentView.backgroundColor = .lightGray
         contentView.layer.cornerRadius = 10
     }
     
     public func configure(userImage: UIImage, userNickname: String) {
-        self.userImage.image = userImage
         self.userNickname.text = userNickname
+        self.userImage.image = userImage
     }
     
     required init?(coder: NSCoder) {
