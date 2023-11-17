@@ -13,9 +13,12 @@ protocol SettingsViewModelInterface {
     func changeNickname(newNickname: String, userId: String, userNameLabel: UILabel)
     func checkFreeStatusOfNickname(_ nickname: String, completion: @escaping (Bool) -> ())
     func deleteAccount(userId: String, completion: @escaping () -> ())
+    func downloadUserImage(userId: String)
+    func uploadNewUserImage(userId: String, userNickname: String, imageData: Data)
 }
 
 class SettingsViewModel: SettingsViewModelInterface {
+    
     var model: SettingsModel
     
     init() { model = SettingsModel() }
@@ -46,6 +49,21 @@ class SettingsViewModel: SettingsViewModelInterface {
         })
     }
     
+    func downloadUserImage(userId: String) {
+        PhotoWorker.downloadPhotoFromDatabase(userId: userId) { [weak self] data in
+            self?.model.imageData.accept(data)
+        }
+    }
+    
+    func uploadNewUserImage(userId: String, userNickname: String, imageData: Data) {
+        PhotoWorker.uploadPhotoToDatabase(userId: userId, imageData: imageData) { [weak self] newURL in
+            self?.model.database.collection("user").document(userId).updateData(["id":userId,
+                                                                                 "nickname":userNickname,
+                                                                                 "imageURL": newURL])
+        }
+        model.imageData.accept(imageData)
+    }
+    
     func deleteAccount(userId: String, completion: @escaping () -> ()) {
         let database = model.database
         database.collection("user").document(userId).collection("chats").getDocuments { [weak self] (querySnapshot, error) in
@@ -74,6 +92,7 @@ class SettingsViewModel: SettingsViewModelInterface {
             UserDefaults.standard.set(nil, forKey: "userNickname")
             UserDefaults.standard.set(nil, forKey: "userId")
             Auth.auth().currentUser?.delete()
+            PhotoWorker.deletePhotoFromDatabase(userId: userId)
             completion()
         }
     }

@@ -11,12 +11,14 @@ import InputBarAccessoryView
 
 protocol ChatViewModelInterface {
     var model: ChatModel { get }
+    
     func checkIsChatAreNotDeleted(notExist: @escaping () -> ())
-    func isMessagesAreNeedToLoad()
+    func isMessagesAreNeedToLoad(completion: @escaping () -> ())
     func inputBar(_ inputBar: InputBarAccessoryView, didPressSendButtonWith text: String)
     func editMessage(messageText: String, data: MessageType, newMessageText: String) 
     func deleteMessage(messageText: String, data: MessageType)
     func deleteChat(completion: @escaping () -> ())
+    func downloadImageFromDatabase(userId: String, completion: @escaping (UIImage) -> ())
 }
 
 class ChatViewModel: ChatViewModelInterface {
@@ -37,7 +39,7 @@ class ChatViewModel: ChatViewModelInterface {
         }
     }
     
-    func isMessagesAreNeedToLoad() {
+    func isMessagesAreNeedToLoad(completion: @escaping () -> ()) {
         let database = model.database
         
         database.collection("chat").document(model.chatId).collection("messages").getDocuments(completion: { [weak self] (querySnapshot, error) in
@@ -47,7 +49,9 @@ class ChatViewModel: ChatViewModelInterface {
             }
             guard let messages = self?.model.messages.value else { return }
             if querySnapshot?.documents.count ?? 0 != self?.model.messages.value.count ?? 0 {
-                self?.loadMessages()
+                self?.loadMessages {
+                    completion()
+                }
             } else {
                 for (index, document) in querySnapshot!.documents.enumerated() {
                     let doc = document.data()
@@ -55,7 +59,9 @@ class ChatViewModel: ChatViewModelInterface {
                     switch messages[index].kind {
                     case .text(let messageText):
                         if messageText != databaseText {
-                            self?.loadMessages()
+                            self?.loadMessages {
+                                completion()
+                            }
                         }
                     default:
                         break
@@ -87,7 +93,7 @@ class ChatViewModel: ChatViewModelInterface {
         findMessageId(messageText: messageText, data: data) { [weak self] doucmentIdForUpdate in
             guard let chatId = self?.model.chatId else { return }
             self?.model.database.collection("chat").document(chatId).collection("messages").document(doucmentIdForUpdate).updateData(["text": newMessageText]) { [weak self] error in
-                self?.loadMessages()
+                self?.loadMessages { }
             }
         }
     }
@@ -96,7 +102,7 @@ class ChatViewModel: ChatViewModelInterface {
         findMessageId(messageText: messageText, data: data) { [weak self] doucmentIdForUpdate in
             guard let chatId = self?.model.chatId else { return }
             self?.model.database.collection("chat").document(chatId).collection("messages").document(doucmentIdForUpdate).delete(completion: { [weak self] error in
-                self?.loadMessages()
+                self?.loadMessages { }
             })
         }
     }
@@ -125,7 +131,19 @@ class ChatViewModel: ChatViewModelInterface {
         }
     }
     
-    private func loadMessages() {
+    func downloadImageFromDatabase(userId: String, completion: @escaping (UIImage) -> ()) {
+        PhotoWorker.downloadPhotoFromDatabase(userId: userId) { data in
+            DispatchQueue.main.async {
+                guard let image = UIImage(data: data) else {
+                    completion(UIImage(systemName:"person.circle.fill") ?? UIImage())
+                    return
+                }
+                completion(image)
+            }
+        }
+    }
+    
+    private func loadMessages(completion: @escaping () -> ()) {
         let database = model.database
         database.collection("chat").document(model.chatId).collection("messages").getDocuments() { [weak self] (querySnapshot, error) in
             guard error == nil else {
@@ -150,6 +168,7 @@ class ChatViewModel: ChatViewModelInterface {
                     self?.model.messages.accept(messages)
                 }
             }
+            completion()
             self?.loadFirstMessages()
         }
     }

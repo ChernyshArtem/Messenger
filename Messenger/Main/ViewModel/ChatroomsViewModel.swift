@@ -23,12 +23,15 @@ class ChatroomsViewModel: ChatroomsViewModelInterface {
     func reloadActualChats() {
         var chats: [ChatInfo] = []
         let database = model.database
-        database.collection("user").document(model.userId.value ?? "").collection("chats").getDocuments { [weak self] (querySnapshot, error) in
+        var documentsAreExists = false
+        database.collection("user").document(model.userId.value ?? "").collection("chats").getDocuments { [weak self]
+            (querySnapshot, error) in
             guard error == nil else {
                 self?.model.error.accept(error?.localizedDescription ?? "")
                 return
             }
             for document in querySnapshot!.documents {
+                documentsAreExists = true
                 guard let otherUserId = document.data()["otherUser"] as? String,
                       let chatId = document.data()["id"] as? String else { return }
                 self?.model.database.collection("user").document(otherUserId).getDocument { document, error in
@@ -41,6 +44,9 @@ class ChatroomsViewModel: ChatroomsViewModelInterface {
                          self?.model.chatsInfoArray.accept(chats)
                     })
                 }
+            }
+            if documentsAreExists == false {
+                self?.model.chatsInfoArray.accept([])
             }
         }
     }

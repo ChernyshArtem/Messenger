@@ -5,16 +5,19 @@
 //  Created by Артём Черныш on 3.11.23.
 //
 
-import Foundation
 import UIKit
+import RxSwift
+import RxCocoa
 
 protocol ContactsViewModelInterface {
     var model: ContactsModel { get }
     func fillActualContacts(_ textField: UITextField)
-    func addChat(numberOfUser: Int, completion: @escaping () -> ())
+    func addChat(numberOfUser: Int)
+    func findContactImage(userId: String, completion: @escaping (UIImage) -> ())
 }
 
 class ContactsViewModel: ContactsViewModelInterface {
+    
     var model: ContactsModel
     
     init() { model = ContactsModel() }
@@ -22,6 +25,7 @@ class ContactsViewModel: ContactsViewModelInterface {
     func fillActualContacts(_ textField: UITextField) {
         let searchText: String = textField.text?.lowercased() ?? ""
         let database = model.database
+        var isUsed = false
         database.collection("user").getDocuments { [weak self] (querySnapshot, error) in
             guard error == nil else {
                 self?.model.error.accept(error?.localizedDescription ?? "")
@@ -29,16 +33,24 @@ class ContactsViewModel: ContactsViewModelInterface {
             }
             var actualArray: [User] = []
             for document in querySnapshot!.documents {
-                guard let nickname: String = document.data()["nickname"] as? String else { return }
+                guard let nickname: String = document.data()["nickname"] as? String,
+                      let userId: String = document.data()["id"] as? String else { return }
                 if nickname.lowercased().contains(searchText) && document.documentID != self?.model.userId {
-                    actualArray.append(User(id: document.documentID, nickname: nickname))
+                    isUsed = true
+                    self?.checkCreationOfChat(otherUserId: userId) { isCreated in
+                        guard isCreated == false else { return }
+                        actualArray.append(User(id: document.documentID, nickname: nickname))
+                        self?.model.actualContacts.accept(actualArray)
+                    }
                 }
             }
-            self?.model.actualContacts.accept(actualArray)
+            if isUsed == false {
+                self?.model.actualContacts.accept(actualArray)
+            }
         }
     }
     
-    func addChat(numberOfUser: Int, completion: @escaping () -> ()) {
+    func addChat(numberOfUser: Int) {
         checkCreationOfChat(numberOfContact: numberOfUser) { [weak self] result in
             guard result == false,
                   let userId = self?.model.userId,
@@ -67,16 +79,26 @@ class ContactsViewModel: ContactsViewModelInterface {
                 self?.model.database.collection("chat").document(document.documentID)
                     .setData(["id":document.documentID,
                              "firstUser":firstUser,
-                             "secondUser":secondUser],
-                completion: { error in
-                    completion()
-                })
-                
+                             "secondUser":secondUser])
             }
         }
     }
     
-    func checkCreationOfChat(numberOfContact: Int, completion: @escaping (Bool) -> Void) {
+    func findContactImage(userId: String, completion: @escaping (UIImage) -> ()) {
+        PhotoWorker.downloadPhotoFromDatabase(userId: userId) { data in
+            DispatchQueue.main.async {
+                guard data != Data(),
+                      let image = UIImage(data: data)
+                else {
+                    completion(UIImage(systemName: "camera.circle.fill") ?? UIImage())
+                    return
+                }
+                completion(image)
+            }
+        }
+    }
+    
+    private func checkCreationOfChat(numberOfContact: Int, completion: @escaping (Bool) -> Void) {
         var chatExist: Bool = false
         let database = model.database
         database.collection("chat").getDocuments { [weak self] (querySnapshot, error) in
@@ -87,13 +109,45 @@ class ContactsViewModel: ContactsViewModelInterface {
             for document in querySnapshot!.documents {
                 guard let firstUser = document.data()["firstUser"] as? String,
                       let secondUser = document.data()["secondUser"] as? String else { return }
-                if firstUser == self?.model.userId && secondUser == self?.model.actualContacts.value[numberOfContact].id {
+                let firstOption = firstUser == self?.model.userId && secondUser == self?.model.actualContacts.value[numberOfContact].id
+                let secondOption = firstUser == self?.model.actualContacts.value[numberOfContact].id && secondUser == self?.model.userId
+                if firstOption || secondOption {
                     chatExist = true
                     break
                 }
             }
             completion(chatExist)
         }
+    }
+    
+    private func checkCreationOfChat(otherUserId: String, completion: @escaping (Bool) -> Void) {
+        var chatExist: Bool = false
+        let database = model.database
+        database.collection("chat").getDocuments { [weak self] (querySnapshot, error) in
+            guard let countOfDocs = querySnapshot?.documents.count,
+                  countOfDocs > 0 else {
+                completion(chatExist)
+                return
+            }
+            database.collection("chat").getDocuments { [weak self] (querySnapshot, error) in
+                guard error == nil else {
+                    self?.model.error.accept(error?.localizedDescription ?? "")
+                    return
+                }
+                for document in querySnapshot!.documents {
+                    guard let firstUser = document.data()["firstUser"] as? String,
+                          let secondUser = document.data()["secondUser"] as? String else { return }
+                    let firstOption = firstUser == self?.model.userId && secondUser == otherUserId
+                    let secondOption = firstUser == otherUserId && secondUser == self?.model.userId
+                    if firstOption || secondOption {
+                        chatExist = true
+                        break
+                    }
+                }
+                completion(chatExist)
+            }
+        }
+        
     }
     
 }

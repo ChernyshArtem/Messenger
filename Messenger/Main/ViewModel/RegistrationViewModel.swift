@@ -32,7 +32,17 @@ class RegistrationViewModel: RegistrationViewModelInterface {
                     return
                 }
                 let userId: String = authDataResult?.user.uid ?? "error"
-                self?.model.database.collection("user").document("\(userId)").setData(["id":"\(userId)","nickname":"\(nickname)"])
+                let actualImageData = self?.model.actualImageData
+                if actualImageData?.value == Data() {
+                    self?.model.database.collection("user").document("\(userId)").setData(["id":"\(userId)",
+                                                                                           "nickname":"\(nickname)"])
+                } else {
+                    PhotoWorker.uploadPhotoToDatabase(userId: userId, imageData: actualImageData?.value ?? Data()) { url in
+                        self?.model.database.collection("user").document("\(userId)").setData(["id":"\(userId)",
+                                                                                               "nickname":"\(nickname)",
+                                                                                               "imageURL": url])
+                    }
+                }
                 self?.model.registrationIsSuccessful.accept(.success)
             })
         }
