@@ -20,7 +20,7 @@ class ContactsCell: UICollectionViewCell {
     }()
     let userNickname: UILabel = {
         let userNickname = UILabel()
-        userNickname.text = "error"
+        userNickname.text = String(localized: "Error")
         userNickname.numberOfLines = 0
         userNickname.textColor = .systemGray5 
         return userNickname

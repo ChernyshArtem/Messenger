@@ -13,12 +13,12 @@ class ContactsView: UIViewController {
     
     let searchField: UITextField = {
         let searchField = UITextField()
-        searchField.placeholder = "Enter user nickname"
+        searchField.placeholder = String(localized: "Enter user nickname")
         return searchField
     }()
     let cancelButton: UIButton = {
         let cancelButton = UIButton(type: .system)
-        cancelButton.setTitle("Отмена", for: .normal)
+        cancelButton.setTitle(String(localized: "Cancel"), for: .normal)
         cancelButton.setTitleColor(.systemBlue, for: .normal)
         return cancelButton
     }()
@@ -106,7 +106,7 @@ class ContactsView: UIViewController {
         }.disposed(by: bag)
         viewModel.model.error.bind { [weak self] errorDescription in
             guard errorDescription != "" else { return }
-            self?.present(CustomAlert.makeCustomAlert(title: "Error", message: errorDescription), animated: true, completion: nil)
+            self?.present(CustomAlert.makeCustomAlert(title: String(localized: "Error"), message: errorDescription), animated: true, completion: nil)
         }.disposed(by: bag)
     }
     
@@ -152,7 +152,8 @@ extension ContactsView: UICollectionViewDelegate, UICollectionViewDataSource, UI
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         guard let cell = collectionView.cellForItem(at: indexPath) as? ContactsCell else { return }
         let userNickname = cell.userNickname.text ?? ""
-        let alert = CustomAlert.makeCustomAlertWithResult(title: "Attention", message: "Do you want to create chat with user \(userNickname)?") { [weak self] chatWillBeCreate in
+        let message: String = String(localized: "Do you want to create chat with user") + " \(userNickname)?"
+        let alert = CustomAlert.makeCustomAlertWithResult(title: String(localized: "Attention"), message: message) { [weak self] chatWillBeCreate in
             if chatWillBeCreate == true {
                 self?.viewModel.addChat(numberOfUser: indexPath.row)
             }

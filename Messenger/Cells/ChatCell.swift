@@ -13,7 +13,7 @@ class ChatCell: UITableViewCell {
     
     private let userName: UILabel = {
         let label = UILabel()
-        label.text = "User Name"
+        label.text = String(localized: "User Name")
         label.font = UIFont.systemFont(ofSize: 20, weight: .semibold)
         return label
     }()
@@ -27,7 +27,7 @@ class ChatCell: UITableViewCell {
     
     private let lastMessage: UILabel = {
         let label = UILabel()
-        label.text = "last message"
+        label.text = String(localized: "last message")
         return label
     }()
     

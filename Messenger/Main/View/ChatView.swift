@@ -46,7 +46,7 @@ class ChatView: MessagesViewController {
         messagesCollectionView.messageCellDelegate = self
         messageInputBar.delegate = self
         navigationItem.title = viewModel.model.otherNickname
-        let deleteButton = UIBarButtonItem(title: "Delete", style: .plain, target: self, action: #selector(deleteChat))
+        let deleteButton = UIBarButtonItem(title: String(localized: "Delete"), style: .plain, target: self, action: #selector(deleteChat))
         deleteButton.tintColor = .red
         navigationItem.rightBarButtonItem = deleteButton
         setupBindings()
@@ -57,7 +57,7 @@ class ChatView: MessagesViewController {
     private func setupBindings() {
         viewModel.model.error.bind { [weak self] errorDescription in
             guard errorDescription != "" else { return }
-            let alert = CustomAlert.makeCustomAlert(title: "Error", message: errorDescription)
+            let alert = CustomAlert.makeCustomAlert(title: String(localized: "Error"), message: errorDescription)
             self?.present(alert, animated: true, completion: nil)
         }.disposed(by: bag)
         viewModel.model.messages.bind { [weak self] model in
@@ -93,7 +93,7 @@ class ChatView: MessagesViewController {
     
     @objc
     private func deleteChat() {
-        let alert = CustomAlert.makeCustomAlertWithResult(title: "Warning", message: "Are you sure that you want to delete this chat?") { [weak self] deleteChat in
+        let alert = CustomAlert.makeCustomAlertWithResult(title: String(localized: "Warning"), message: String(localized: "Are you sure that you want to delete this chat?")) { [weak self] deleteChat in
             if deleteChat == true {
                 self?.viewModel.deleteChat { [weak self] in
                     self?.navigationController?.popViewController(animated: true)
@@ -140,7 +140,7 @@ extension ChatView: MessageCellDelegate {
     }
     
     private func changeTextMessage(messageText: String, data: MessageType) {
-        let alert = CustomAlert.makeMessageChangerAlertWithResult(title: "Select what you want to do with:", message: messageText) { [weak self] result in
+        let alert = CustomAlert.makeMessageChangerAlertWithResult(title: String(localized: "Select what you want to do with:"), message: messageText) { [weak self] result in
             switch result {
             case .edit:
                 self?.present(self?.makeAlertWithNickname(messageText: messageText, data: data) ?? UIAlertController(), animated: true, completion: nil)
@@ -152,9 +152,9 @@ extension ChatView: MessageCellDelegate {
     }
     
     private func makeAlertWithNickname(messageText: String, data: MessageType) -> UIAlertController {
-        let alertWithNickname = UIAlertController(title: "Enter new message text", message: nil, preferredStyle: .alert)
+        let alertWithNickname = UIAlertController(title: String(localized: "Enter new message text"), message: nil, preferredStyle: .alert)
         alertWithNickname.addTextField()
-        let submitAction = UIAlertAction(title: "Submit", style: .default) { [unowned alertWithNickname] _ in
+        let submitAction = UIAlertAction(title: String(localized: "Submit"), style: .default) { [unowned alertWithNickname] _ in
             guard let newText = alertWithNickname.textFields![0].text else { return }
             self.viewModel.editMessage(messageText: messageText, data: data, newMessageText: newText)
         }
@@ -183,7 +183,7 @@ extension ChatView: MessagesDisplayDelegate {
         let otherSender = viewModel.model.otherSender
         var name = ""
         if messages[indexPath.section].sender.senderId == ownSender.senderId {
-            name = "Me"
+            name = String(localized: "Me")
         } else {
             name = otherSender.displayName
         }

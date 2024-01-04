@@ -16,13 +16,13 @@ class StartView: UIViewController {
     }()
     let nameLabel: UILabel = {
         let nameLabel = UILabel()
-        nameLabel.text = "Messenger"
+        nameLabel.text = String(localized: "Messenger")
         nameLabel.font = UIFont.systemFont(ofSize: 35)
         return nameLabel
     }()
     let descriptionLabel: UILabel = {
         let descriptionLabel = UILabel()
-        descriptionLabel.text = "The best messenger in the world"
+        descriptionLabel.text = String(localized: "The best messenger in the world")
         descriptionLabel.font = UIFont.systemFont(ofSize: 25, weight: .thin)
         descriptionLabel.numberOfLines = 0
         descriptionLabel.textAlignment = .center
@@ -30,7 +30,7 @@ class StartView: UIViewController {
     }()
     let startButton: UIButton = {
         let startButton = UIButton(type: .system)
-        startButton.setTitle("Start Messanging", for: .normal)
+        startButton.setTitle(String(localized: "Start Messanging"), for: .normal)
         startButton.titleLabel?.font = UIFont.systemFont(ofSize: 30, weight: .thin)
         startButton.setTitleColor(.white, for: .normal)
         startButton.backgroundColor = UIColor(red: 45/255, green: 119/255, blue: 231/255, alpha: 1)

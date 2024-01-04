@@ -13,23 +13,23 @@ class RegistrationView: UIViewController {
     
     let infoLabel: UILabel = {
         let infoLabel = UILabel()
-        infoLabel.text = "Info"
+        infoLabel.text = String(localized: "Info")
         infoLabel.font = UIFont.systemFont(ofSize: 30, weight: .bold)
         return infoLabel
     }()
     let nicknameTextField: UITextField = {
         let nicknameTextField = UITextField()
-        nicknameTextField.placeholder = "Your nickname"
+        nicknameTextField.placeholder = String(localized: "Your nickname")
         return nicknameTextField
     }()
     let emailTextField: UITextField = {
         let emailTextField = UITextField()
-        emailTextField.placeholder = "Enter your email"
+        emailTextField.placeholder = String(localized: "Enter your email")
         return emailTextField
     }()
     let passwordTextField: UITextField = {
         let passwordTextField = UITextField()
-        passwordTextField.placeholder = "Enter your password"
+        passwordTextField.placeholder = String(localized: "Enter your password")
         return passwordTextField
     }()
     let userImageButton: UIButton = {
@@ -46,7 +46,7 @@ class RegistrationView: UIViewController {
     }()
     let registerButton: UIButton = {
         let registerButton = UIButton(type: .system)
-        registerButton.setTitle("REGISTER", for: .normal)
+        registerButton.setTitle(String(localized: "REGISTER"), for: .normal)
         registerButton.backgroundColor = UIColor(red: 45/255, green: 119/255, blue: 231/255, alpha: 1)
         registerButton.setTitleColor(.white, for: .normal)
         registerButton.layer.cornerRadius = 15
@@ -130,16 +130,16 @@ class RegistrationView: UIViewController {
         viewModel.model.registrationIsSuccessful.bind { [weak self] result in
             switch result {
             case .nicknameError:
-                self?.present(CustomAlert.makeCustomAlert(title: "Warning", message: "Your account hasn't been registered. This nickname is occupied"), animated: true, completion: nil)
+                self?.present(CustomAlert.makeCustomAlert(title: String(localized: "Warning"), message: String(localized: "Your account hasn't been registered. This nickname is occupied")), animated: true, completion: nil)
             case .success:
-                self?.present(CustomAlert.makeCustomAlert(title: "Congratuations", message: "Your account has been registered"), animated: true, completion: nil)
+                self?.present(CustomAlert.makeCustomAlert(title: String(localized: "Congratuations"), message: String(localized: "Your account has been registered")), animated: true, completion: nil)
                 
             case .other: break
             }
         }.disposed(by: bag)
         viewModel.model.error.bind { [weak self] errorDescription in
             guard errorDescription != "" else { return }
-            self?.present(CustomAlert.makeCustomAlert(title: "Error", message: errorDescription), animated: true, completion: nil)
+            self?.present(CustomAlert.makeCustomAlert(title: String(localized: "Error"), message: errorDescription), animated: true, completion: nil)
         }.disposed(by: bag)
         emailTextField.rx.text.bind { [weak self] model in
             self?.viewModel.model.userEmail.accept(model ?? "")

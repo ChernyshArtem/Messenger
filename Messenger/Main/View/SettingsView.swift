@@ -34,7 +34,7 @@ class SettingsView: UIViewController {
     }()
     let exitButton: UIButton = {
         let exitButton = UIButton(type: .system)
-        exitButton.setTitle("🚪 exit", for: .normal)
+        exitButton.setTitle(String(localized: "🚪 exit"), for: .normal)
         exitButton.setTitleColor(.red, for: .normal)
         return exitButton
     }()
@@ -84,8 +84,8 @@ class SettingsView: UIViewController {
         }
         exitButton.addTarget(self, action: #selector(exitFromAccount), for: .touchUpInside)
         userImageButton.addTarget(self, action: #selector(uploadPhoto), for: .touchUpInside)
-        navigationItem.rightBarButtonItem = UIBarButtonItem(title: "Change", style: .plain, target: self, action: #selector(changeNickname))
-        let deleteButton = UIBarButtonItem(title: "Delete", style: .plain, target: self, action: #selector(deleteAccount))
+        navigationItem.rightBarButtonItem = UIBarButtonItem(title: String(localized: "Change"), style: .plain, target: self, action: #selector(changeNickname))
+        let deleteButton = UIBarButtonItem(title: String(localized: "Delete"), style: .plain, target: self, action: #selector(deleteAccount))
         deleteButton.tintColor = .red
         navigationItem.leftBarButtonItem = deleteButton
     }
@@ -93,7 +93,7 @@ class SettingsView: UIViewController {
     private func setupBindings() {
         viewModel.model.error.bind { [weak self] errorDescription in
             guard errorDescription != "" else { return }
-            self?.present(CustomAlert.makeCustomAlert(title: "Error", message: errorDescription), animated: true, completion: nil)
+            self?.present(CustomAlert.makeCustomAlert(title: String(localized: "Error"), message: errorDescription), animated: true, completion: nil)
         }.disposed(by: bag)
         viewModel.model.imageData.bind { [weak self] imageData in
             if imageData != Data() {
@@ -105,15 +105,15 @@ class SettingsView: UIViewController {
     }
     
     private func makeAlertWithNickname() -> UIAlertController {
-        let alertWithNickname = UIAlertController(title: "Enter your new nickname", message: nil, preferredStyle: .alert)
+        let alertWithNickname = UIAlertController(title: String(localized: "Enter your new nickname"), message: nil, preferredStyle: .alert)
         alertWithNickname.addTextField()
-        let submitAction = UIAlertAction(title: "Submit", style: .default) { [unowned alertWithNickname] _ in
+        let submitAction = UIAlertAction(title: String(localized: "Submit"), style: .default) { [unowned alertWithNickname] _ in
             guard let newNickname = alertWithNickname.textFields![0].text else { return }
             self.viewModel.checkFreeStatusOfNickname(newNickname) { [weak self] freeNicknameStatus in
                 if freeNicknameStatus == true {
                     self?.viewModel.changeNickname(newNickname: newNickname, userId: self?.userId ?? "", userNameLabel: self?.userName ?? UILabel())
                 } else {
-                    self?.present(CustomAlert.makeCustomAlert(title: "Error", message: "This nickname is occupied"), animated: true, completion: nil)
+                    self?.present(CustomAlert.makeCustomAlert(title: String(localized: "Error"), message: String(localized: "This nickname is occupied")), animated: true, completion: nil)
                 }
             }
            
@@ -133,7 +133,7 @@ class SettingsView: UIViewController {
     
     @objc
     func changeNickname() {
-        let alert = CustomAlert.makeCustomAlertWithResult(title: "Attention", message: "Do you really want to change your nickname?") { [weak self] wantToChangeNickname in
+        let alert = CustomAlert.makeCustomAlertWithResult(title: String(localized: "Attention"), message: String(localized: "Do you really want to change your nickname?")) { [weak self] wantToChangeNickname in
              if wantToChangeNickname == true {
                  guard let alertWithNickname = self?.makeAlertWithNickname() else { return }
                  self?.present(alertWithNickname, animated: true)
@@ -144,7 +144,7 @@ class SettingsView: UIViewController {
     
     @objc
     func deleteAccount() {
-        let alert = CustomAlert.makeCustomAlertWithResult(title: "Warning", message: "Are you sure you want to delete your account?") { [weak self] deleteAccount in
+        let alert = CustomAlert.makeCustomAlertWithResult(title: String(localized: "Warning"), message: String(localized: "Are you sure you want to delete your account?")) { [weak self] deleteAccount in
             if deleteAccount == true {
                 self?.viewModel.deleteAccount(userId: self?.userId ?? "", completion: {
                     self?.view.window?.rootViewController = UINavigationController(rootViewController: StartView())

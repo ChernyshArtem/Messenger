@@ -61,7 +61,7 @@ class ChatroomsView: UIViewController {
         }.disposed(by: bag)
         viewModel.model.error.bind { [weak self] errorDescription in
             guard errorDescription != "" else { return }
-            self?.present(CustomAlert.makeCustomAlert(title: "Error", message: errorDescription), animated: true, completion: nil)
+            self?.present(CustomAlert.makeCustomAlert(title: String(localized: "Error"), message: errorDescription), animated: true, completion: nil)
         }.disposed(by: bag)
     }
     

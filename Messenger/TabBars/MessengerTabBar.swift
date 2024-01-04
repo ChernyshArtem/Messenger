@@ -15,9 +15,9 @@ class MessengerTabBar: UITabBarController {
         self.selectedIndex = 1
     }
     private func setupTabBarItems() {
-        let contactsVC = createVC(nameVC: ContactsView(), title: "Contacts", image: UIImage(systemName: "person.crop.circle.fill"))
-        let chatVC = createVC(nameVC: ChatroomsView(), title: "Chats", image: UIImage(systemName: "message"))
-        let settingsVC = createVC(nameVC: SettingsView(), title: "Settings", image: UIImage(systemName: "gear"))
+        let contactsVC = createVC(nameVC: ContactsView(), title: String(localized: "Contacts"), image: UIImage(systemName: "person.crop.circle.fill"))
+        let chatVC = createVC(nameVC: ChatroomsView(), title: String(localized: "Chats"), image: UIImage(systemName: "message"))
+        let settingsVC = createVC(nameVC: SettingsView(), title: String(localized: "Settings"), image: UIImage(systemName: "gear"))
    
         setViewControllers([contactsVC,chatVC,settingsVC], animated: true)
     }

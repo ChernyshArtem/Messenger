@@ -13,18 +13,18 @@ class AuthorizationView: UIViewController {
     
     let emailTextField: UITextField = {
         let emailTextField = UITextField()
-        emailTextField.placeholder = "Your email"
+        emailTextField.placeholder = String(localized: "Your email")
         return emailTextField
     }()
     let passwordTextField: UITextField = {
         let passwordTextField = UITextField()
-        passwordTextField.placeholder = "Your password"
+        passwordTextField.placeholder = String(localized: "Your password")
         passwordTextField.isSecureTextEntry = true
         return passwordTextField
     }()
     let loginButton: UIButton = {
         let loginButton = UIButton(type: .system)
-        loginButton.setTitle("LOGIN", for: .normal)
+        loginButton.setTitle(String(localized: "LOGIN"), for: .normal)
         loginButton.setTitleColor(.white, for: .normal)
         loginButton.backgroundColor = UIColor(red: 45/255, green: 119/255, blue: 231/255, alpha: 1)
         loginButton.layer.cornerRadius = 15
@@ -32,7 +32,7 @@ class AuthorizationView: UIViewController {
     }()
     let registrationButton: UIButton = {
         let registrationButton = UIButton()
-        let text = "Not registered? Click here"
+        let text = String(localized: "Not registered? Click here")
         let attributedText = NSMutableAttributedString(string: text)
         let textRange = NSRange(location: 0, length: text.count)
         attributedText.addAttribute(.underlineStyle,
@@ -118,7 +118,7 @@ class AuthorizationView: UIViewController {
         }.disposed(by: bag)
         viewModel.model.error.bind { [weak self] errorDescription in
             guard errorDescription != "" else { return }
-            self?.present(CustomAlert.makeCustomAlert(title: "Error", message: errorDescription), animated: true, completion: nil)
+            self?.present(CustomAlert.makeCustomAlert(title: String(localized: "Error"), message: errorDescription), animated: true, completion: nil)
         }.disposed(by: bag)
         emailTextField.rx.text.bind { [weak self] model in
             self?.viewModel.model.userEmail.accept(model ?? "")
